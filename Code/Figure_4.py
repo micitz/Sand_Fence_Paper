@@ -98,8 +98,7 @@ def plot_storms(df):
                 zorder=3)
 
     # Plot the data
-    counter = 0
-    for column in columns:
+    for counter, column in enumerate(columns):
         if column == '0':
             column = 0
         sns.barplot(x=df.index,
@@ -110,11 +109,11 @@ def plot_storms(df):
                     linewidth=1,
                     ax=ax,
                     zorder=3)
-        counter += 1
 
     # Add text labels
-    x_text, y_text, spacing, counter = 0, 3.70, 0.25, 0
-    for label in ['Tropical: 20', 'Category 1: 4', 'Category 2: 5']:
+    x_text, y_text, spacing = 0, 3.70, 0.25
+    labels = ['Tropical: 20', 'Category 1: 4', 'Category 2: 5']
+    for counter, label in enumerate(labels):
         ax.text(x=x_text,
                 y=y_text - (counter * spacing),
                 s=label,
@@ -123,7 +122,6 @@ def plot_storms(df):
                 fontsize=14,
                 fontweight='bold',
                 zorder=3)
-        counter += 1
 
     # Set the x-axis
     plt.xticks(rotation='vertical')
