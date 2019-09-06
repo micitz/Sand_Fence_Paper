@@ -22,6 +22,10 @@ import pandas as pd
 import numpy as np
 import os
 
+import utility_functions as utils
+import plot_settings as sets
+opts = sets.settings()
+
 pd.set_option('mode.chained_assignment', None)
 
 """
@@ -207,7 +211,7 @@ def regional_uncertainty(r, ur, alpha=0.05):
 
     # Perform an autocorrelation on r to determine
     # the number of independent samples
-    r_acr = estimated_autocorrelation(r)
+    r_acr = estimated_autocorrelation(ur[~np.isnan(ur)])
     r_acr_vals = np.where(r_acr <= alpha)
     n_star = np.nanmin(r_acr_vals)
 
@@ -426,7 +430,6 @@ def bar_plots(data, fences, ax3, ax4, ax5, ax6, rate, text_y, bar_y, color, para
     all_locs['ID'] = 'All'
     all_locs = pd.melt(all_locs, id_vars=['ID'], value_vars=['1997-2010', '2010-2016', '1997-2016'])
 
-
     # Make a barplot of the data for all locations
     sns.barplot(x='ID', y='value', ci=conf_type, hue='variable', data=all_locs,
                 palette=colors, estimator=np.nanmedian, errcolor='black', errwidth=2, ax=ax3)
@@ -452,7 +455,7 @@ def bar_plots(data, fences, ax3, ax4, ax5, ax6, rate, text_y, bar_y, color, para
     for ax in [ax3, ax4, ax5, ax6]:
 
         # Set grids
-        add_grid([ax], xax=False)
+        utils.set_grid(ax)
 
         # Add a zero line
         ax.axhline(y=0, color='black', linewidth=2, linestyle='--', zorder=10)
@@ -469,15 +472,15 @@ def bar_plots(data, fences, ax3, ax4, ax5, ax6, rate, text_y, bar_y, color, para
             if rate:
                 ax.set_ylabel('Median ' + param + '\nChange Rate (m/yr)',
                               color=color,
-                              fontname='Arial',
-                              fontsize=12,
-                              fontweight='bold')
+                              fontname=opts['Font'],
+                              fontsize=opts['Axis Font Size'],
+                              fontweight=opts['Weight'])
             else:
                 ax.set_ylabel('Median ' + param + '\nChange (m)',
                               color=color,
-                              fontname='Arial',
-                              fontsize=12,
-                              fontweight='bold')
+                              fontname=opts['Font'],
+                              fontsize=opts['Axis Font Size'],
+                              fontweight=opts['Weight'])
         else:
             ax.set_ylabel('')
             plt.setp(ax.get_yticklabels(), visible=False)
@@ -506,55 +509,9 @@ def bar_plots(data, fences, ax3, ax4, ax5, ax6, rate, text_y, bar_y, color, para
              y=bar_y - (bar_y * 0.20),
              s='C.',
              color='black',
-             fontname='Arial',
-             fontsize=14,
-             fontweight='bold')
-
-
-def tight_and_transparent(fig, axs, color, **kwargs):
-    """
-    Give the figure a tight layout and a transparent backgorund
-    """
-    for ax in axs:
-        ax.tick_params(colors=color)
-        for tick in ax.get_xticklabels():
-            tick.set_fontname('Arial')
-        for tick in ax.get_yticklabels():
-            tick.set_fontname('Arial')
-
-    plt.tight_layout(**kwargs)
-    fig.patch.set_color('w')
-    fig.patch.set_alpha(0.0)
-
-
-def set_spines(axs, color):
-    """
-    Set spines on the lower and left borders. Remove the others
-    """
-
-    for ax in axs:
-
-        # Set the spines
-        ax.spines['top'].set_visible(False)
-        ax.spines['right'].set_visible(False)
-        ax.spines['left'].set_linewidth(2)
-        ax.spines['bottom'].set_linewidth(2)
-        ax.spines['left'].set_color(color)
-        ax.spines['bottom'].set_color(color)
-
-        # Make the tick widths match
-        ax.tick_params(width=2)
-
-
-def add_grid(axs, xax=True):
-    """
-    Add a grid to the plot. Set xax=False
-    if you only want horizontal lines
-    """
-
-    for ax in axs:
-        ax.grid(color='grey', linewidth=0.25, zorder=0)
-        ax.xaxis.grid(xax)
+             fontname=opts['Font'],
+             fontsize=opts['Label Font Size'],
+             fontweight=opts['Weight'])
 
 
 def make_overall_change_plot_w_kde(data, fences, param, y_min, y_max, y_ticks, y_tick_labels,
@@ -569,8 +526,8 @@ def make_overall_change_plot_w_kde(data, fences, param, y_min, y_max, y_ticks, y
     - Shoreline_Change.py
     """
 
-    # Setup the plot
-    fig = plt.figure(dpi=300)
+    # Setup the figure
+    fig = plt.figure(dpi=opts['Figure DPI'])
     categories = ['Fort Macon', 'Non-Fenced', 'Fenced']
     gs = gridspec.GridSpec(nrows=2, ncols=4, wspace=0.0, hspace=0.3)
     ax1 = fig.add_subplot(gs[0, 0:3])
@@ -579,6 +536,8 @@ def make_overall_change_plot_w_kde(data, fences, param, y_min, y_max, y_ticks, y
     ax4 = fig.add_subplot(gs[1, 1], sharey=ax3)
     ax5 = fig.add_subplot(gs[1, 2], sharey=ax3)
     ax6 = fig.add_subplot(gs[1, 3], sharey=ax3)
+
+    # Setup additional plot styling
     lwidth = 2
     max_x = 0
     marker_shape = 'X'
@@ -587,15 +546,11 @@ def make_overall_change_plot_w_kde(data, fences, param, y_min, y_max, y_ticks, y
     exes = [5000, 19300, 32000]
     yrs = ['1997-2016', '1997-2010', '2010-2016']
     labs = ['\n(Overall)', '\n(Pre-Fencing)', '\n(Post-Fencing)']
-    cols = ['darkred', 'darkgreen', 'darkblue']
-    markers = ['lightsalmon', 'lightgreen', 'lightblue']
-
     text_years = ['1997-2010', '2010-2016', '1997-2016']
     text_labs = ['\n(Pre-Fencing)', '\n(Post-Fencing)', '\n(Overall)']
-    text_cols = ['darkred', 'darkblue', 'green']
 
     # Add a grid for the top plots
-    add_grid([ax1, ax2], xax=True)
+    utils.set_grid([ax1, ax2])
 
     # Plot the data
     for ii, years in enumerate(['1997-2010', '1997-2016', '2010-2016']):
@@ -605,7 +560,7 @@ def make_overall_change_plot_w_kde(data, fences, param, y_min, y_max, y_ticks, y
                         y=years,
                         data=data,
                         linewidth=0,
-                        color=markers[ii],
+                        color=opts['Marker Colors'][ii],
                         marker=marker_shape,
                         alpha=marker_alpha,
                         ax=ax1,
@@ -616,14 +571,14 @@ def make_overall_change_plot_w_kde(data, fences, param, y_min, y_max, y_ticks, y
                      y=years + ' Trend',
                      data=data,
                      linewidth=2,
-                     color=cols[ii],
+                     color=opts['Trend Colors'][ii],
                      ax=ax1,
                      zorder=5)
 
         # KDE Plot in the second axis
         kde1 = sns.kdeplot(data[years].dropna(),
                            shade=True,
-                           color=cols[ii],
+                           color=opts['Trend Colors'][ii],
                            linewidth=lwidth,
                            legend=False,
                            vertical=True,
@@ -634,10 +589,10 @@ def make_overall_change_plot_w_kde(data, fences, param, y_min, y_max, y_ticks, y
         ax1.text(x=exes[ii],
                  y=y_text - (2 * spacing),
                  s=text_years[ii] + text_labs[ii],
-                 color=text_cols[ii],
-                 fontname='Arial',
-                 fontsize=12,
-                 fontweight='bold',
+                 color=opts['Text Colors'][ii],
+                 fontname=opts['Font'],
+                 fontsize=opts['Label Font Size'] - 2,
+                 fontweight=opts['Weight'],
                  ha='center',
                  va='center',
                  zorder=8)
@@ -666,15 +621,15 @@ def make_overall_change_plot_w_kde(data, fences, param, y_min, y_max, y_ticks, y
     ax1.text(x=-0.5, y=y_max - (y_max * 0.20),
              s='A.',
              color='black',
-             fontname='Arial',
-             fontsize=14,
-             fontweight='bold')
+             fontname=opts['Font'],
+             fontsize=opts['Label Font Size'],
+             fontweight=opts['Weight'])
     ax2.text(x=max_x - (max_x * 0.91), y=y_max - (y_max * 0.20),
              s='B.',
              color='black',
-             fontname='Arial',
-             fontsize=14,
-             fontweight='bold')
+             fontname=opts['Font'],
+             fontsize=opts['Label Font Size'],
+             fontweight=opts['Weight'])
 
     # Set the x-axis
     ax1.set_xlim(right=x_max)
@@ -682,9 +637,9 @@ def make_overall_change_plot_w_kde(data, fences, param, y_min, y_max, y_ticks, y
     ax1.set_xticklabels(['0', '5', '10', '15', '20', '25', '30', '35', ''])
     ax1.set_xlabel('Alongshore Distance (km)',
                    color=color,
-                   fontname='Arial',
-                   fontsize=12,
-                   fontweight='bold')
+                   fontname=opts['Font'],
+                   fontsize=opts['Axis Font Size'],
+                   fontweight=opts['Weight'])
 
     # Set the y-axis
     ax1.set_ylim(bottom=y_min, top=y_max)
@@ -693,32 +648,29 @@ def make_overall_change_plot_w_kde(data, fences, param, y_min, y_max, y_ticks, y
     if rate:
         ax1.set_ylabel(param + ' Change\nRate (m/yr)',
                        color=color,
-                       fontname='Arial',
-                       fontsize=12,
-                       fontweight='bold')
+                       fontname=opts['Font'],
+                       fontsize=opts['Axis Font Size'],
+                       fontweight=opts['Weight'])
     else:
         ax1.set_ylabel(param + ' Change (m)',
                        color=color,
-                       fontname='Arial',
-                       fontsize=12,
-                       fontweight='bold')
+                       fontname=opts['Font'],
+                       fontsize=opts['Axis Font Size'],
+                       fontweight=opts['Weight'])
     plt.setp(ax2.get_yticklabels(), visible=False)
 
     # Add a barplot of change rates on the bottom of the figure
     bar_plots(data, fences, ax3, ax4, ax5, ax6, rate, text_y, bar_y, color, param)
 
     # Set the spines for the top plots
-    set_spines([ax1, ax2], color)
+    utils.set_spines(axes=[ax1, ax2])
 
     # Set a tight layout and a transparent background
-    tight_and_transparent(fig, [ax1, ax2, ax3, ax4, ax5, ax6], color)
+    utils.tight_and_transparent(axes=[ax1, ax2, ax3, ax4, ax5, ax6], fig=fig)
 
     # Save the figure
     title = 'Figure 7'
-    save_name = os.path.join('..', 'Figures', title + '.png')
-    plt.savefig(save_name, bbox_inches='tight', dpi='figure')
-    plt.close()
-    print(f'Figure saved: {save_name}\n')
+    utils.save_and_close(title)
 
 
 """

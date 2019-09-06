@@ -170,7 +170,7 @@ def regional_uncertainty(r, ur, alpha=0.05):
 
     # Perform an autocorrelation on r to determine
     # the number of independent samples
-    r_acr = estimated_autocorrelation(r)
+    r_acr = estimated_autocorrelation(ur[~np.isnan(ur)])
     r_acr_vals = np.where(r_acr <= alpha)
     n_star = np.nanmin(r_acr_vals)
 
